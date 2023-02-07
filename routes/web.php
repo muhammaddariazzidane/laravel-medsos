@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\CommentController;
+use App\Models\Post;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,10 +25,14 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 Route::get('/home', function () {
-    return view('home');
+    return view('home', [
+        'posts' => Post::with('comments', 'user')->latest()->get()
+    ]);
 })->middleware(['auth', 'verified'])->name('home');
 
-Route::resource('posts', PostController::class)->only(['store', 'update', 'destroy'])->middleware('auth', 'verified');
+Route::resource('comments', CommentController::class)->middleware('auth', 'verified');
+
+Route::resource('posts', PostController::class)->only(['store', 'edit', 'show', 'update', 'destroy'])->middleware('auth', 'verified');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

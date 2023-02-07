@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use App\Models\Comment;
 
 class PostController extends Controller
 {
@@ -35,14 +36,14 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request);
         $validated = $request->validate([
             'body' => 'required|string|max:255',
         ]);
+        $validated['user_id'] = auth()->user()->id;
 
         // $request->user()->posts()->create($validated);
-
-        return redirect()->back();
+        Post::create($validated);
+        return redirect()->back()->with('success', 'success create post');
     }
 
     /**
@@ -53,7 +54,16 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        //
+        // dd(Comment::with('user')->where('post_id', $post->id)->latest()->get());
+        // dd(Comment::with('user', 'posts')->where('post_id', $post->id)->get());
+
+        // echo "ini detail $post";
+        return view('posts.detail', [
+            'post' => Post::with('user', 'comments')->where('id', $post->id)->first(),
+            // 'post' => Post::with('user', 'comments')->first(),
+            // 'posts' => Post::with('comments', 'user')->latest()->get()
+            'comments' => Comment::with('user')->where('post_id', $post->id)->latest()->get()
+        ]);
     }
 
     /**
@@ -64,7 +74,9 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        //
+        return view('posts.edit', [
+            'post' => $post
+        ]);
     }
 
     /**
@@ -76,7 +88,12 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        //
+        $validated = $request->validate([
+            'body' => 'required|string|max:255',
+        ]);
+
+        $post->update($validated);
+        return redirect()->to('/home')->with('success', 'success Update post');
     }
 
     /**
@@ -87,6 +104,7 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        //
+        $post->delete();
+        return redirect()->to('/home')->with('success', 'success Delete post');
     }
 }
